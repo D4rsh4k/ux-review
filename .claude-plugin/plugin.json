@@ -1,0 +1,8 @@
+{
+  "name": "ux-review",
+  "description": "Automated UX reviews that read code, capture screenshots via Claude in Chrome, and execute workflows end-to-end across 10 dimensions.",
+  "version": "1.0.0",
+  "author": {
+    "name": "Darshak Nanda"
+  }
+}

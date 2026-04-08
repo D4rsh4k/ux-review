@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>UX Review Skill — Overview</title>
+  <style>
+    :root {
+      --bg: #fafafa; --card: #ffffff; --text: #18181b; --muted: #71717a;
+      --border: #e4e4e7; --accent: #2563eb; --accent-light: #eff6ff;
+      --critical: #dc2626; --critical-bg: #fef2f2;
+      --major: #ea580c; --major-bg: #fff7ed;
+      --minor: #ca8a04; --minor-bg: #fefce8;
+      --info: #6b7280; --info-bg: #f9fafb;
+      --success: #16a34a; --success-bg: #f0fdf4;
+      --radius: 12px; --radius-sm: 8px;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #09090b; --card: #18181b; --text: #fafafa; --muted: #a1a1aa;
+        --border: #27272a; --accent: #60a5fa; --accent-light: #172554;
+        --critical-bg: #2a1215; --major-bg: #2a1a0e; --minor-bg: #2a2510;
+        --info-bg: #1a1a1e; --success-bg: #0a2015;
+      }
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Inter, Roboto, sans-serif;
+      background: var(--bg); color: var(--text); line-height: 1.7;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* Hero */
+    .hero {
+      background: linear-gradient(135deg, #1e3a5f 0%, #2563eb 50%, #7c3aed 100%);
+      color: white; padding: 5rem 2rem 4rem; text-align: center;
+    }
+    .hero h1 { font-size: 2.75rem; font-weight: 800; letter-spacing: -0.02em; margin-bottom: 0.75rem; }
+    .hero p { font-size: 1.15rem; opacity: 0.9; max-width: 640px; margin: 0 auto; line-height: 1.6; }
+    .hero-badge {
+      display: inline-block; background: rgba(255,255,255,0.2); backdrop-filter: blur(8px);
+      padding: 6px 16px; border-radius: 9999px; font-size: 0.8rem; font-weight: 600;
+      letter-spacing: 0.05em; text-transform: uppercase; margin-bottom: 1.5rem;
+    }
+
+    /* Container */
+    .container { max-width: 960px; margin: 0 auto; padding: 3rem 1.5rem; }
+
+    /* Section headings */
+    .section-label {
+      font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em;
+      color: var(--accent); margin-bottom: 0.5rem;
+    }
+    h2 { font-size: 1.75rem; font-weight: 700; letter-spacing: -0.01em; margin-bottom: 1.25rem; }
+    h3 { font-size: 1.15rem; font-weight: 600; margin-bottom: 0.5rem; }
+
+    /* Cards */
+    .card {
+      background: var(--card); border: 1px solid var(--border); border-radius: var(--radius);
+      padding: 1.75rem; margin-bottom: 1.25rem; box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    }
+    .card p { color: var(--muted); font-size: 0.95rem; }
+
+    /* Three modes */
+    .modes-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.25rem; margin: 2rem 0; }
+    .mode-card {
+      background: var(--card); border: 1px solid var(--border); border-radius: var(--radius);
+      padding: 1.5rem; text-align: center; transition: transform 0.15s, box-shadow 0.15s;
+    }
+    .mode-card:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.08); }
+    .mode-icon { font-size: 2rem; margin-bottom: 0.75rem; display: block; }
+    .mode-card h3 { font-size: 1rem; margin-bottom: 0.4rem; }
+    .mode-card p { font-size: 0.85rem; color: var(--muted); }
+
+    /* Phase timeline */
+    .timeline { position: relative; margin: 2rem 0 3rem; padding-left: 3rem; }
+    .timeline::before {
+      content: ''; position: absolute; left: 15px; top: 8px; bottom: 8px;
+      width: 2px; background: var(--border);
+    }
+    .phase {
+      position: relative; margin-bottom: 2rem;
+    }
+    .phase:last-child { margin-bottom: 0; }
+    .phase-dot {
+      position: absolute; left: -3rem; top: 4px; width: 32px; height: 32px;
+      border-radius: 50%; background: var(--accent); color: white;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.75rem; font-weight: 700; z-index: 1;
+    }
+    .phase h3 { margin-bottom: 0.35rem; }
+    .phase p { color: var(--muted); font-size: 0.9rem; }
+    .phase-tags { display: flex; gap: 0.5rem; margin-top: 0.5rem; flex-wrap: wrap; }
+    .tag {
+      display: inline-block; padding: 2px 10px; border-radius: 9999px;
+      font-size: 0.7rem; font-weight: 600; background: var(--accent-light); color: var(--accent);
+    }
+
+    /* Dimensions grid */
+    .dim-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; margin: 1.5rem 0; }
+    .dim-card {
+      background: var(--card); border: 1px solid var(--border); border-radius: var(--radius-sm);
+      padding: 1.25rem; display: flex; gap: 1rem; align-items: flex-start;
+    }
+    .dim-num {
+      flex-shrink: 0; width: 28px; height: 28px; border-radius: 6px;
+      background: var(--accent-light); color: var(--accent);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.75rem; font-weight: 700;
+    }
+    .dim-card h4 { font-size: 0.95rem; font-weight: 600; margin-bottom: 0.2rem; }
+    .dim-card p { font-size: 0.8rem; color: var(--muted); margin: 0; }
+    .dim-max {
+      display: inline-block; font-size: 0.65rem; font-weight: 600; padding: 1px 6px;
+      border-radius: 4px; margin-left: 0.4rem; vertical-align: middle;
+    }
+    .dim-max-critical { background: var(--critical-bg); color: var(--critical); }
+    .dim-max-major { background: var(--major-bg); color: var(--major); }
+
+    /* Severity table */
+    .severity-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin: 1.5rem 0; }
+    .sev-card {
+      border-radius: var(--radius-sm); padding: 1.25rem; text-align: center;
+    }
+    .sev-card h4 { font-size: 0.95rem; font-weight: 700; margin-bottom: 0.25rem; }
+    .sev-card p { font-size: 0.8rem; margin: 0; }
+    .sev-card .impact { font-size: 0.75rem; font-weight: 600; margin-top: 0.5rem; opacity: 0.8; }
+    .sev-critical { background: var(--critical-bg); color: var(--critical); border: 1px solid var(--critical); }
+    .sev-major { background: var(--major-bg); color: var(--major); border: 1px solid var(--major); }
+    .sev-minor { background: var(--minor-bg); color: var(--minor); border: 1px solid var(--minor); }
+    .sev-info { background: var(--info-bg); color: var(--info); border: 1px solid var(--info); }
+
+    /* Scoring */
+    .scoring-bar {
+      display: flex; border-radius: 9999px; overflow: hidden; height: 32px;
+      margin: 1.5rem 0; font-size: 0.75rem; font-weight: 600; color: white;
+    }
+    .scoring-bar > div { display: flex; align-items: center; justify-content: center; }
+    .bar-approve { background: var(--success); flex: 10; }
+    .bar-changes { background: var(--major); flex: 10; }
+    .bar-rework { background: var(--critical); flex: 20; }
+
+    /* Output preview */
+    .output-preview {
+      background: var(--card); border: 1px solid var(--border); border-radius: var(--radius);
+      padding: 1.75rem; font-family: 'SF Mono', Consolas, 'Liberation Mono', monospace;
+      font-size: 0.82rem; line-height: 1.8; overflow-x: auto; white-space: pre-wrap;
+    }
+    .output-preview .op-heading { color: var(--accent); font-weight: 700; }
+    .output-preview .op-critical { color: var(--critical); font-weight: 600; }
+    .output-preview .op-major { color: var(--major); font-weight: 600; }
+    .output-preview .op-minor { color: var(--minor); }
+    .output-preview .op-muted { color: var(--muted); }
+
+    /* Callout */
+    .callout {
+      background: var(--accent-light); border-left: 4px solid var(--accent);
+      border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+      padding: 1.25rem 1.5rem; margin: 2rem 0;
+    }
+    .callout p { color: var(--text); font-size: 0.9rem; margin: 0; }
+    .callout strong { color: var(--accent); }
+
+    /* Footer */
+    .footer {
+      text-align: center; padding: 3rem 1.5rem; color: var(--muted); font-size: 0.8rem;
+      border-top: 1px solid var(--border); margin-top: 2rem;
+    }
+
+    /* Divider */
+    .divider { border: none; border-top: 1px solid var(--border); margin: 3rem 0; }
+
+    /* Features list */
+    .feature-list { list-style: none; margin: 1rem 0; }
+    .feature-list li {
+      padding: 0.6rem 0; border-bottom: 1px solid var(--border);
+      font-size: 0.9rem; display: flex; align-items: center; gap: 0.75rem;
+    }
+    .feature-list li:last-child { border-bottom: none; }
+    .check { color: var(--success); font-size: 1.1rem; }
+
+    /* Cross-cutting rules */
+    .rule-card {
+      background: var(--critical-bg); border: 1px solid var(--critical);
+      border-radius: var(--radius-sm); padding: 1.25rem; margin-bottom: 1rem;
+    }
+    .rule-card h4 { color: var(--critical); font-size: 0.9rem; margin-bottom: 0.3rem; }
+    .rule-card p { font-size: 0.85rem; color: var(--text); margin: 0; }
+
+    @media (max-width: 768px) {
+      .hero h1 { font-size: 2rem; }
+      .modes-grid { grid-template-columns: 1fr; }
+      .dim-grid { grid-template-columns: 1fr; }
+      .severity-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+  </style>
+</head>
+<body>
+
+<!-- Hero -->
+<div class="hero">
+  <span class="hero-badge">Claude Code Skill</span>
+  <h1>/ux-review</h1>
+  <p>Automated UX reviews that read your code, capture screenshots, and execute workflows end-to-end — catching issues before they reach users.</p>
+</div>
+
+<div class="container">
+
+  <!-- What it does -->
+  <div class="section-label">Overview</div>
+  <h2>What It Does</h2>
+  <p style="color: var(--muted); font-size: 1.05rem; margin-bottom: 1.5rem;">
+    A senior UX engineer in your terminal. It reviews the <strong style="color: var(--text);">actual implemented UI</strong> — not design files — by combining code analysis with live browser testing via Claude in Chrome.
+  </p>
+
+  <div class="callout">
+    <p><strong>Key principle:</strong> Code analysis alone can't catch visual issues. Visual inspection alone can't catch implementation issues. And neither can catch usability problems. All three modes are required.</p>
+  </div>
+
+  <!-- Three verification modes -->
+  <div class="modes-grid">
+    <div class="mode-card">
+      <span class="mode-icon">🔍</span>
+      <h3>Code Analysis</h3>
+      <p>Reads source files to check structure, patterns, design system usage, and implementation correctness.</p>
+    </div>
+    <div class="mode-card">
+      <span class="mode-icon">👁</span>
+      <h3>Visual Inspection</h3>
+      <p>Captures screenshots at multiple viewports to verify rendered output, layout, and visual hierarchy.</p>
+    </div>
+    <div class="mode-card">
+      <span class="mode-icon">🖱</span>
+      <h3>Interactive Walkthrough</h3>
+      <p>Executes every workflow end-to-end — clicking buttons, filling forms, triggering errors, counting steps.</p>
+    </div>
+  </div>
+
+  <hr class="divider">
+
+  <!-- Phases -->
+  <div class="section-label">Workflow</div>
+  <h2>Six-Phase Review Process</h2>
+  <p style="color: var(--muted); margin-bottom: 2rem;">Each review follows a structured process from discovery to PR comment.</p>
+
+  <div class="timeline">
+    <div class="phase">
+      <div class="phase-dot">0</div>
+      <h3>Discovery</h3>
+      <p>Maps the feature tree from the branch diff. Identifies all components, user flows, step sequences, and the closest existing feature for comparison.</p>
+      <div class="phase-tags"><span class="tag">Feature Map</span><span class="tag">Flow Diagram</span><span class="tag">Reference Feature</span></div>
+    </div>
+    <div class="phase">
+      <div class="phase-dot">1</div>
+      <h3>Clarification</h3>
+      <p>Confirms scope with the developer. Asks about focus areas, constraints, and data availability before investing review time.</p>
+      <div class="phase-tags"><span class="tag">Scope Confirmation</span><span class="tag">Focus Areas</span></div>
+    </div>
+    <div class="phase">
+      <div class="phase-dot">2</div>
+      <h3>Analysis &amp; Walkthrough</h3>
+      <p>The core phase. Reads the codebase, sets up test data, then executes every workflow in the browser. Tests happy paths, error paths, boundary cases, and cross-feature transitions. Captures responsive screenshots at 1440px, 1024px, and 768px.</p>
+      <div class="phase-tags"><span class="tag">Code Reading</span><span class="tag">Data Setup</span><span class="tag">Live Walkthrough</span><span class="tag">Error Testing</span><span class="tag">Responsive Testing</span></div>
+    </div>
+    <div class="phase">
+      <div class="phase-dot">3</div>
+      <h3>UX Review</h3>
+      <p>Evaluates across 10 dimensions (see below). Every finding is classified by verification type, severity, and includes file:line references or screenshot evidence.</p>
+      <div class="phase-tags"><span class="tag">10 Dimensions</span><span class="tag">Evidence-Based</span><span class="tag">Severity Rubric</span></div>
+    </div>
+    <div class="phase">
+      <div class="phase-dot">4</div>
+      <h3>Report</h3>
+      <p>Structured output: verdict and score first, then action items, score card, walkthrough summary, state coverage matrix, detailed findings, quick wins, and blockers.</p>
+      <div class="phase-tags"><span class="tag">Verdict</span><span class="tag">Action Items</span><span class="tag">Score Card</span><span class="tag">State Matrix</span></div>
+    </div>
+    <div class="phase">
+      <div class="phase-dot">5</div>
+      <h3>Post to PR</h3>
+      <p>Automatically posts the review as a PR comment via <code>gh pr comment</code>, with the verdict visible up front and the full report in a collapsible section.</p>
+      <div class="phase-tags"><span class="tag">GitHub PR Comment</span><span class="tag">Collapsible Detail</span></div>
+    </div>
+  </div>
+
+  <hr class="divider">
+
+  <!-- 10 Dimensions -->
+  <div class="section-label">Review Criteria</div>
+  <h2>10 Review Dimensions</h2>
+  <p style="color: var(--muted); margin-bottom: 1rem;">Each dimension has specific verification methods and a maximum severity cap.</p>
+
+  <div class="dim-grid">
+    <div class="dim-card">
+      <div class="dim-num">1</div>
+      <div>
+        <h4>UI Consistency <span class="dim-max dim-max-critical">max: Critical</span></h4>
+        <p>Design system compliance. Catches native HTML replacing storybook components, hardcoded colors instead of tokens, duplicated custom components.</p>
+      </div>
+    </div>
+    <div class="dim-card">
+      <div class="dim-num">2</div>
+      <div>
+        <h4>Design Smells <span class="dim-max dim-max-critical">max: Critical</span></h4>
+        <p>Anti-pattern scan: multiple primary buttons, blank panels, silent errors, missing loading states, spacing drift, typography soup.</p>
+      </div>
+    </div>
+    <div class="dim-card">
+      <div class="dim-num">3</div>
+      <div>
+        <h4>Error Handling <span class="dim-max dim-max-critical">max: Critical</span></h4>
+        <p>Silent failures, unguarded destructive actions, missing validation, unhandled rejections. Tested both in code and live.</p>
+      </div>
+    </div>
+    <div class="dim-card">
+      <div class="dim-num">4</div>
+      <div>
+        <h4>Journey Completeness <span class="dim-max dim-max-critical">max: Critical</span></h4>
+        <p>State coverage: loading, empty, error, success, partial data, boundaries. Produces a state coverage matrix.</p>
+      </div>
+    </div>
+    <div class="dim-card">
+      <div class="dim-num">5</div>
+      <div>
+        <h4>Heuristic Evaluation <span class="dim-max dim-max-major">max: Major*</span></h4>
+        <p>Nielsen's 10 heuristics: visibility, match, control, consistency, error prevention, recognition, flexibility, aesthetics, recovery, help.</p>
+      </div>
+    </div>
+    <div class="dim-card">
+      <div class="dim-num">6</div>
+      <div>
+        <h4>Gestalt &amp; Visual Hierarchy <span class="dim-max dim-max-critical">max: Critical</span></h4>
+        <p>Proximity, similarity, reading order, figure-ground. Visually verified from screenshots, not guessed from code.</p>
+      </div>
+    </div>
+    <div class="dim-card">
+      <div class="dim-num">7</div>
+      <div>
+        <h4>Cross-Feature Consistency <span class="dim-max dim-max-major">max: Major</span></h4>
+        <p>Compares against a reference feature for patterns, state handling, component choices, visual density, and navigation.</p>
+      </div>
+    </div>
+    <div class="dim-card">
+      <div class="dim-num">8</div>
+      <div>
+        <h4>Responsive <span class="dim-max dim-max-major">max: Major</span></h4>
+        <p>Layout at 1440, 1024, 768px. Overflow, interactive elements at tablet, scroll strategies. Verified visually and interactively.</p>
+      </div>
+    </div>
+    <div class="dim-card">
+      <div class="dim-num">9</div>
+      <div>
+        <h4>Content &amp; Microcopy <span class="dim-max dim-max-major">max: Major</span></h4>
+        <p>Button labels, error messages, placeholders, terminology consistency, confirmation clarity.</p>
+      </div>
+    </div>
+    <div class="dim-card">
+      <div class="dim-num">10</div>
+      <div>
+        <h4>Efficiency <span class="dim-max dim-max-major">max: Major</span></h4>
+        <p>Click counts, redundant round-trips, cognitive load, smart defaults. Measured live during walkthrough.</p>
+      </div>
+    </div>
+  </div>
+
+  <hr class="divider">
+
+  <!-- Severity -->
+  <div class="section-label">Severity</div>
+  <h2>Two-Tier Severity Rubric</h2>
+  <p style="color: var(--muted); margin-bottom: 1rem;">Strict, objective rules. No guessing severity.</p>
+
+  <div class="severity-grid">
+    <div class="sev-card sev-critical">
+      <h4>Critical</h4>
+      <p>Structural DS violation, data loss, blocked workflow</p>
+      <div class="impact">Auto-fail</div>
+    </div>
+    <div class="sev-card sev-major">
+      <h4>Major</h4>
+      <p>Functional gap, missing state, UX heuristic failure</p>
+      <div class="impact">-5 points</div>
+    </div>
+    <div class="sev-card sev-minor">
+      <h4>Minor</h4>
+      <p>Cosmetic, subjective, low-impact</p>
+      <div class="impact">-2 points</div>
+    </div>
+    <div class="sev-card sev-info">
+      <h4>Info</h4>
+      <p>Observation or suggestion</p>
+      <div class="impact">No deduction</div>
+    </div>
+  </div>
+
+  <!-- Cross-cutting rules -->
+  <div style="margin-top: 1.5rem;">
+    <div class="rule-card">
+      <h4>Design System is the Contract</h4>
+      <p>Structural storybook deviations (wrong component, duplicated component) are always Critical. Token violations (hardcoded colors) are always Major. Regardless of which dimension discovers them.</p>
+    </div>
+    <div class="rule-card">
+      <h4>Error Prevention is Always Critical</h4>
+      <p>Missing validation on user input or missing confirmation on destructive actions is Critical, regardless of dimension. Overrides per-dimension severity caps.</p>
+    </div>
+  </div>
+
+  <hr class="divider">
+
+  <!-- Scoring -->
+  <div class="section-label">Scoring</div>
+  <h2>How Scoring Works</h2>
+
+  <div class="card">
+    <p style="color: var(--text); font-size: 0.95rem; margin-bottom: 1rem;">
+      Start at <strong>100 points</strong>. Any Critical finding = auto-fail. Otherwise, deduct Major (-5) and Minor (-2) findings.
+    </p>
+    <div class="scoring-bar">
+      <div class="bar-approve">90-100 Approve</div>
+      <div class="bar-changes">80-89 Fix &amp; Merge</div>
+      <div class="bar-rework">&lt; 80 Rework</div>
+    </div>
+    <p style="font-size: 0.85rem;">Subjective or judgment-only findings with no code evidence are flagged for designer review and don't affect the score.</p>
+  </div>
+
+  <hr class="divider">
+
+  <!-- What the output looks like -->
+  <div class="section-label">Output</div>
+  <h2>What You Get</h2>
+
+  <div class="output-preview"><span class="op-heading">## Verdict: Request changes</span>
+<span class="op-heading">## Score: Auto-fail — 1 Critical finding</span>
+
+<span class="op-muted">| # | Severity | Dimension        | Type | File:Line                  | Finding                    |</span>
+<span class="op-critical">| 1 | Critical | UI Consistency   |  🔍  | MapMultiScore...tsx:359     | Native &lt;input checkbox&gt;    |</span>
+<span class="op-major">| 2 | Major    | UI Consistency   |  🔍  | CreateExpForm.tsx:548,565   | Hardcoded text-blue-500    |</span>
+<span class="op-major">| 3 | Major    | Content          |  🔍  | CreateExpForm.tsx:499       | Misleading step description|</span>
+<span class="op-major">| 4 | Major    | Heuristics       |  🖱️  | W1 step 5                  | No tooltip on disabled btn |</span>
+<span class="op-minor">| 5 | Minor    | Efficiency       |  🖱️  | W1 step 3                  | Extra click for dataset    |</span>
+<span class="op-muted">
++ Score Card, Walkthrough Summary, State Coverage Matrix,
+  Detailed Findings, Quick Wins, Pre-Merge Blockers</span></div>
+
+  <p style="color: var(--muted); font-size: 0.85rem; margin-top: 1rem;">
+    Output from an actual review of the Experiment Creation feature. Posted automatically to the PR.
+  </p>
+
+  <hr class="divider">
+
+  <!-- How to use -->
+  <div class="section-label">Usage</div>
+  <h2>How to Use It</h2>
+
+  <div class="card">
+    <h3>Prerequisites</h3>
+    <ul class="feature-list">
+      <li><span class="check">✓</span> Claude Code (CLI, desktop app, or IDE extension)</li>
+      <li><span class="check">✓</span> Claude in Chrome extension installed and connected</li>
+      <li><span class="check">✓</span> Dev server running on localhost</li>
+      <li><span class="check">✓</span> Feature branch with UI changes</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <h3>Run It</h3>
+    <p style="color: var(--text); font-size: 0.95rem;">
+      In your terminal or IDE, type: <code style="background: var(--accent-light); color: var(--accent); padding: 2px 8px; border-radius: 4px; font-weight: 600;">/ux-review</code> followed by the feature name.
+    </p>
+    <p style="margin-top: 0.75rem; font-size: 0.85rem;">
+      The skill will map your feature, ask for confirmation, then run the full review — reading code, launching the browser, executing workflows, and posting findings to your PR.
+    </p>
+  </div>
+
+  <div class="card">
+    <h3>What It Checks Against</h3>
+    <ul class="feature-list">
+      <li><span class="check">✓</span> Your storybook component library (structural compliance)</li>
+      <li><span class="check">✓</span> CSS design tokens (color, spacing, typography)</li>
+      <li><span class="check">✓</span> The closest existing feature (cross-feature consistency)</li>
+      <li><span class="check">✓</span> Nielsen's 10 usability heuristics</li>
+      <li><span class="check">✓</span> Gestalt principles (visual hierarchy, proximity, similarity)</li>
+      <li><span class="check">✓</span> Responsive behavior at 3 viewport widths</li>
+    </ul>
+  </div>
+
+  <hr class="divider">
+
+  <!-- Key differentiators -->
+  <div class="section-label">Why It Matters</div>
+  <h2>Not Just Another Linter</h2>
+
+  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem; margin: 1.5rem 0;">
+    <div class="card">
+      <h3 style="color: var(--critical);">Traditional UX Review</h3>
+      <ul class="feature-list" style="font-size: 0.85rem;">
+        <li>Manual, time-consuming</li>
+        <li>Inconsistent criteria across reviewers</li>
+        <li>Often skipped under deadline pressure</li>
+        <li>Findings arrive late in the cycle</li>
+        <li>Subjective severity assignments</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3 style="color: var(--success);">/ux-review</h3>
+      <ul class="feature-list" style="font-size: 0.85rem;">
+        <li>Automated, runs in minutes</li>
+        <li>Consistent 10-dimension rubric every time</li>
+        <li>Runs as part of PR workflow</li>
+        <li>Findings before code review starts</li>
+        <li>Objective severity with defined rules</li>
+      </ul>
+    </div>
+  </div>
+
+</div>
+
+<div class="footer">
+  <p>UX Review Skill for Claude Code — Darshak Nanda</p>
+</div>
+
+
+
+</body></html>
