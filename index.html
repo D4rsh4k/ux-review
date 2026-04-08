@@ -1,0 +1,1445 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ux-review — Automated UX Reviews for Claude Code</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,300;1,9..40,400&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #08080a;
+      --surface: #111114;
+      --surface-2: #19191d;
+      --surface-3: #222228;
+      --text: #f0ebe4;
+      --text-muted: #8e8e96;
+      --text-dim: #5c5c66;
+      --accent: #d4943c;
+      --accent-glow: #e5a54b;
+      --accent-soft: rgba(212, 148, 60, 0.08);
+      --accent-border: rgba(212, 148, 60, 0.2);
+      --critical: #ef4444;
+      --critical-bg: rgba(239, 68, 68, 0.08);
+      --major: #f59e0b;
+      --major-bg: rgba(245, 158, 11, 0.08);
+      --minor: #6b7280;
+      --approve: #22c55e;
+      --approve-bg: rgba(34, 197, 94, 0.08);
+      --border: rgba(255, 255, 255, 0.06);
+      --serif: 'Instrument Serif', Georgia, serif;
+      --sans: 'DM Sans', -apple-system, sans-serif;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    html {
+      scroll-behavior: smooth;
+      scrollbar-width: thin;
+      scrollbar-color: var(--surface-3) var(--bg);
+    }
+
+    body {
+      font-family: var(--sans);
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.7;
+      -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
+    }
+
+    ::selection {
+      background: var(--accent);
+      color: var(--bg);
+    }
+
+    /* ─── Noise overlay ─── */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+      pointer-events: none;
+      z-index: 9999;
+    }
+
+    /* ─── Top bar ─── */
+    .topbar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 100;
+      padding: 1.25rem 3rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      backdrop-filter: blur(20px) saturate(180%);
+      background: rgba(8, 8, 10, 0.7);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .topbar-logo {
+      font-family: var(--sans);
+      font-size: 0.85rem;
+      font-weight: 500;
+      letter-spacing: 0.08em;
+      color: var(--text-muted);
+      text-transform: uppercase;
+    }
+
+    .topbar-logo span {
+      color: var(--accent);
+    }
+
+    .topbar-links {
+      display: flex;
+      gap: 2rem;
+      align-items: center;
+    }
+
+    .topbar-links a {
+      color: var(--text-muted);
+      text-decoration: none;
+      font-size: 0.82rem;
+      font-weight: 400;
+      letter-spacing: 0.02em;
+      transition: color 0.2s;
+    }
+
+    .topbar-links a:hover {
+      color: var(--text);
+    }
+
+    .btn-install {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: transparent;
+      color: var(--accent);
+      padding: 0.55rem 1.25rem;
+      border-radius: 6px;
+      font-size: 0.82rem;
+      font-weight: 600;
+      text-decoration: none;
+      letter-spacing: 0.01em;
+      transition: all 0.25s;
+      border: 1px solid var(--accent);
+      cursor: pointer;
+    }
+
+    .btn-install:hover {
+      background: var(--accent);
+      color: var(--bg);
+      box-shadow: 0 0 20px rgba(212, 148, 60, 0.2);
+    }
+
+    /* ─── Hero ─── */
+    .hero {
+      min-height: 100vh;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      align-items: center;
+      padding: 8rem 6rem 6rem;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero::before {
+      content: '';
+      position: absolute;
+      top: -200px;
+      right: -100px;
+      width: 700px;
+      height: 700px;
+      background: radial-gradient(circle, rgba(212, 148, 60, 0.06) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    .hero-left {
+      position: relative;
+      z-index: 2;
+    }
+
+    .hero-tag {
+      display: inline-block;
+      font-size: 0.7rem;
+      font-weight: 500;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--accent);
+      border: 1px solid var(--accent-border);
+      background: var(--accent-soft);
+      padding: 0.4rem 1rem;
+      border-radius: 100px;
+      margin-bottom: 2rem;
+    }
+
+    .hero h1 {
+      font-family: var(--serif);
+      font-size: 4.5rem;
+      font-weight: 400;
+      line-height: 1.05;
+      letter-spacing: -0.02em;
+      margin-bottom: 2rem;
+      max-width: 560px;
+    }
+
+    .hero h1 em {
+      font-style: italic;
+      color: var(--accent);
+    }
+
+    .hero-sub {
+      font-size: 1.1rem;
+      color: var(--text-muted);
+      max-width: 440px;
+      margin-bottom: 2.5rem;
+      font-weight: 400;
+      line-height: 1.8;
+    }
+
+    .hero-actions {
+      display: flex;
+      gap: 1rem;
+      align-items: center;
+    }
+
+    .hero-cmd {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      padding: 0.7rem 1.25rem;
+      border-radius: 8px;
+      font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: all 0.2s;
+      position: relative;
+    }
+
+    .hero-cmd:hover {
+      border-color: var(--accent-border);
+      color: var(--text);
+    }
+
+    .hero-cmd .prompt {
+      color: var(--accent);
+      user-select: none;
+    }
+
+    .hero-cmd .copy-hint {
+      font-family: var(--sans);
+      font-size: 0.65rem;
+      color: var(--text-dim);
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      margin-left: 1rem;
+      opacity: 0;
+      transition: opacity 0.2s;
+    }
+
+    .hero-cmd:hover .copy-hint {
+      opacity: 1;
+    }
+
+    /* ─── Review preview card ─── */
+    .hero-right {
+      position: relative;
+      z-index: 2;
+      display: flex;
+      justify-content: center;
+    }
+
+    .review-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 2rem;
+      width: 100%;
+      max-width: 480px;
+      font-family: 'SF Mono', 'Fira Code', monospace;
+      font-size: 0.78rem;
+      line-height: 1.9;
+      position: relative;
+      box-shadow:
+        0 4px 60px rgba(0, 0, 0, 0.5),
+        0 0 0 1px rgba(255, 255, 255, 0.03) inset;
+      transform: perspective(800px) rotateY(-2deg) rotateX(1deg);
+      transition: transform 0.4s ease;
+    }
+
+    .review-card:hover {
+      transform: perspective(800px) rotateY(0deg) rotateX(0deg);
+    }
+
+    .review-card::before {
+      content: '';
+      position: absolute;
+      top: -1px;
+      left: 2rem;
+      right: 2rem;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, var(--accent-border), transparent);
+    }
+
+    .rc-header {
+      display: flex;
+      gap: 0.5rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .rc-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--surface-3);
+    }
+
+    .rc-line {
+      display: flex;
+      gap: 0;
+    }
+
+    .rc-verdict {
+      color: var(--critical);
+      font-weight: 600;
+    }
+
+    .rc-score {
+      color: var(--text-muted);
+    }
+
+    .rc-finding {
+      display: grid;
+      grid-template-columns: auto auto 1fr auto;
+      gap: 0 1rem;
+      padding: 0.3rem 0;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .rc-finding:last-child {
+      border-bottom: none;
+    }
+
+    .rc-sev-critical {
+      color: var(--critical);
+      font-weight: 600;
+    }
+
+    .rc-sev-major {
+      color: var(--major);
+      font-weight: 500;
+    }
+
+    .rc-sev-minor {
+      color: var(--minor);
+    }
+
+    .rc-dim {
+      color: var(--text-dim);
+    }
+
+    .rc-desc {
+      color: var(--text-muted);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .rc-type {
+      opacity: 0.7;
+    }
+
+    .rc-spacer {
+      height: 1rem;
+    }
+
+    /* ─── Section styles ─── */
+    section {
+      padding: 8rem 6rem;
+      position: relative;
+    }
+
+    .section-label {
+      font-size: 0.65rem;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.2em;
+      color: var(--accent);
+      margin-bottom: 1rem;
+    }
+
+    section h2 {
+      font-family: var(--serif);
+      font-size: 3rem;
+      font-weight: 400;
+      letter-spacing: -0.01em;
+      margin-bottom: 1.5rem;
+      line-height: 1.15;
+    }
+
+    section h2 em {
+      font-style: italic;
+      color: var(--accent);
+    }
+
+    .section-desc {
+      color: var(--text-muted);
+      font-size: 1.05rem;
+      max-width: 560px;
+      font-weight: 400;
+      line-height: 1.8;
+      margin-bottom: 3.5rem;
+    }
+
+    /* ─── Divider ─── */
+    .divider {
+      height: 1px;
+      background: linear-gradient(90deg, transparent, var(--border), transparent);
+      margin: 0 6rem;
+    }
+
+    /* ─── Three modes ─── */
+    .modes-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1px;
+      background: var(--border);
+      border-radius: 14px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+    }
+
+    .mode {
+      background: var(--surface);
+      padding: 2.5rem;
+      position: relative;
+      transition: background 0.3s;
+    }
+
+    .mode:hover {
+      background: var(--surface-2);
+    }
+
+    .mode-num {
+      font-family: var(--serif);
+      font-size: 3rem;
+      color: rgba(212, 148, 60, 0.2);
+      font-style: italic;
+      line-height: 1;
+      margin-bottom: 1.25rem;
+      transition: color 0.3s;
+    }
+
+    .mode:hover .mode-num {
+      color: rgba(212, 148, 60, 0.45);
+    }
+
+    .mode h3 {
+      font-family: var(--serif);
+      font-size: 1.5rem;
+      font-weight: 400;
+      margin-bottom: 0.75rem;
+    }
+
+    .mode p {
+      color: var(--text-muted);
+      font-size: 0.9rem;
+      font-weight: 400;
+      line-height: 1.7;
+    }
+
+    /* ─── Dimensions ─── */
+    .dim-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 1px;
+      background: var(--border);
+      border-radius: 14px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+    }
+
+    .dim {
+      background: var(--surface);
+      padding: 2rem 2.25rem;
+      display: flex;
+      gap: 1.25rem;
+      align-items: flex-start;
+      transition: background 0.3s;
+    }
+
+    .dim:hover {
+      background: var(--surface-2);
+    }
+
+    .dim-index {
+      font-family: var(--serif);
+      font-size: 1.4rem;
+      font-style: italic;
+      color: rgba(212, 148, 60, 0.35);
+      flex-shrink: 0;
+      width: 2rem;
+      text-align: right;
+      padding-top: 0.1rem;
+      transition: color 0.3s;
+    }
+
+    .dim:hover .dim-index {
+      color: var(--accent);
+    }
+
+    .dim-content h4 {
+      font-family: var(--sans);
+      font-size: 0.95rem;
+      font-weight: 500;
+      margin-bottom: 0.3rem;
+    }
+
+    .dim-content p {
+      font-size: 0.82rem;
+      color: var(--text-muted);
+      font-weight: 400;
+      line-height: 1.6;
+    }
+
+    .dim-sev {
+      font-size: 0.6rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      padding: 0.15rem 0.5rem;
+      border-radius: 3px;
+      margin-left: 0.5rem;
+      position: relative;
+      top: -1px;
+    }
+
+    .sev-c {
+      background: var(--critical-bg);
+      color: var(--critical);
+    }
+
+    .sev-m {
+      background: var(--major-bg);
+      color: var(--major);
+    }
+
+    /* ─── How it works / Phases ─── */
+    .phases {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 2rem;
+    }
+
+    .phase {
+      position: relative;
+      padding: 2rem;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      background: var(--surface);
+      transition: all 0.3s;
+    }
+
+    .phase:hover {
+      border-color: var(--accent-border);
+      background: var(--surface-2);
+    }
+
+    .phase-num {
+      font-family: var(--serif);
+      font-size: 4rem;
+      font-style: italic;
+      color: rgba(212, 148, 60, 0.2);
+      line-height: 1;
+      margin-bottom: 1rem;
+      transition: color 0.3s;
+    }
+
+    .phase:hover .phase-num {
+      color: rgba(212, 148, 60, 0.45);
+    }
+
+    .phase h3 {
+      font-family: var(--serif);
+      font-size: 1.35rem;
+      font-weight: 400;
+      margin-bottom: 0.5rem;
+    }
+
+    .phase p {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      font-weight: 400;
+      line-height: 1.7;
+    }
+
+    /* ─── Scoring ─── */
+    .scoring-section {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 4rem;
+      align-items: start;
+    }
+
+    .score-scale {
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+    }
+
+    .score-band {
+      display: flex;
+      align-items: center;
+      gap: 1.5rem;
+      padding: 1.5rem 0;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .score-band:last-child {
+      border-bottom: none;
+    }
+
+    .score-range {
+      font-family: 'SF Mono', monospace;
+      font-size: 1.1rem;
+      font-weight: 600;
+      width: 5rem;
+      text-align: right;
+      flex-shrink: 0;
+    }
+
+    .score-bar {
+      flex: 1;
+      height: 6px;
+      border-radius: 3px;
+      position: relative;
+    }
+
+    .score-label {
+      font-size: 0.85rem;
+      font-weight: 400;
+      width: 10rem;
+      flex-shrink: 0;
+    }
+
+    .sb-approve .score-range { color: var(--approve); }
+    .sb-approve .score-bar { background: var(--approve); }
+    .sb-approve .score-label { color: var(--approve); }
+
+    .sb-changes .score-range { color: var(--major); }
+    .sb-changes .score-bar { background: var(--major); }
+    .sb-changes .score-label { color: var(--major); }
+
+    .sb-rework .score-range { color: var(--critical); }
+    .sb-rework .score-bar { background: var(--critical); }
+    .sb-rework .score-label { color: var(--critical); }
+
+    .severity-cards {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+    }
+
+    .sev-card {
+      padding: 1.5rem;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: var(--surface);
+    }
+
+    .sev-card h4 {
+      font-family: var(--sans);
+      font-size: 0.85rem;
+      font-weight: 600;
+      margin-bottom: 0.3rem;
+    }
+
+    .sev-card p {
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      font-weight: 400;
+      line-height: 1.5;
+    }
+
+    .sev-card-impact {
+      font-size: 0.7rem;
+      font-weight: 600;
+      margin-top: 0.75rem;
+      letter-spacing: 0.03em;
+    }
+
+    .sc-critical { border-color: rgba(239, 68, 68, 0.15); }
+    .sc-critical h4 { color: var(--critical); }
+    .sc-critical .sev-card-impact { color: var(--critical); }
+
+    .sc-major { border-color: rgba(245, 158, 11, 0.15); }
+    .sc-major h4 { color: var(--major); }
+    .sc-major .sev-card-impact { color: var(--major); }
+
+    .sc-minor { border-color: var(--border); }
+    .sc-minor h4 { color: var(--minor); }
+    .sc-minor .sev-card-impact { color: var(--minor); }
+
+    .sc-approve { border-color: rgba(34, 197, 94, 0.15); }
+    .sc-approve h4 { color: var(--approve); }
+    .sc-approve .sev-card-impact { color: var(--approve); }
+
+    /* ─── CTA ─── */
+    .cta-section {
+      text-align: center;
+      padding: 10rem 6rem;
+      position: relative;
+    }
+
+    .cta-section::before {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 500px;
+      height: 500px;
+      background: radial-gradient(circle, rgba(212, 148, 60, 0.05) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    .cta-section h2 {
+      font-family: var(--serif);
+      font-size: 3.5rem;
+      font-weight: 400;
+      margin-bottom: 1.5rem;
+    }
+
+    .cta-section p {
+      color: var(--text-muted);
+      font-size: 1.05rem;
+      font-weight: 400;
+      max-width: 500px;
+      margin: 0 auto 2.5rem;
+      line-height: 1.8;
+    }
+
+    .cta-install {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.75rem;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      padding: 1rem 2rem;
+      border-radius: 10px;
+      font-family: 'SF Mono', monospace;
+      font-size: 0.95rem;
+      color: var(--text);
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+
+    .cta-install:hover {
+      border-color: var(--accent-border);
+      box-shadow: 0 0 30px rgba(212, 148, 60, 0.08);
+    }
+
+    .cta-install .prompt {
+      color: var(--accent);
+    }
+
+    /* ─── Footer ─── */
+    footer {
+      padding: 3rem 6rem;
+      border-top: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    footer p {
+      font-size: 0.78rem;
+      color: var(--text-dim);
+    }
+
+    footer a {
+      color: var(--text-muted);
+      text-decoration: none;
+      font-size: 0.78rem;
+      transition: color 0.2s;
+    }
+
+    footer a:hover {
+      color: var(--accent);
+    }
+
+    /* ─── Prereqs ─── */
+    .prereqs {
+      display: flex;
+      gap: 2rem;
+      flex-wrap: wrap;
+    }
+
+    .prereq {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      font-weight: 400;
+    }
+
+    .prereq-dot {
+      width: 5px;
+      height: 5px;
+      border-radius: 50%;
+      background: var(--accent);
+      flex-shrink: 0;
+    }
+
+    /* ─── Install steps ─── */
+    .install-steps {
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+    }
+
+    .install-step {
+      display: flex;
+      gap: 2rem;
+      padding: 2rem 0;
+      border-bottom: 1px solid var(--border);
+      align-items: flex-start;
+    }
+
+    .install-step:first-child {
+      padding-top: 0;
+    }
+
+    .step-num {
+      font-family: var(--serif);
+      font-size: 2.5rem;
+      font-style: italic;
+      color: var(--text-dim);
+      flex-shrink: 0;
+      width: 3rem;
+      text-align: center;
+      line-height: 1;
+      padding-top: 0.25rem;
+    }
+
+    .step-content {
+      flex: 1;
+    }
+
+    .step-content h4 {
+      font-size: 1rem;
+      font-weight: 500;
+      margin-bottom: 0.4rem;
+    }
+
+    .step-content p {
+      font-size: 0.88rem;
+      color: var(--text-muted);
+      font-weight: 400;
+      margin-bottom: 1rem;
+    }
+
+    .code-block {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.75rem;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      padding: 0.8rem 1.25rem;
+      border-radius: 8px;
+      font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+      font-size: 0.85rem;
+      color: var(--text);
+      cursor: pointer;
+      transition: all 0.2s;
+      position: relative;
+      flex-wrap: wrap;
+      line-height: 1.8;
+    }
+
+    .code-block:hover {
+      border-color: var(--accent-border);
+    }
+
+    .cb-prompt {
+      color: var(--accent);
+      user-select: none;
+    }
+
+    .copy-toast {
+      font-family: var(--sans);
+      font-size: 0.7rem;
+      color: var(--approve);
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      font-weight: 600;
+      margin-left: 1rem;
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+
+    .install-alt {
+      margin-top: 2.5rem;
+      padding: 2rem;
+      border: 1px dashed var(--border);
+      border-radius: 12px;
+    }
+
+    .install-alt h4 {
+      font-size: 0.9rem;
+      font-weight: 500;
+      color: var(--text-muted);
+      margin-bottom: 0.4rem;
+    }
+
+    .install-alt p {
+      font-size: 0.82rem;
+      color: var(--text-muted);
+      font-weight: 400;
+      margin-bottom: 1rem;
+    }
+
+    /* ─── Scroll animations ─── */
+    .reveal {
+      opacity: 0;
+      transform: translateY(30px);
+      transition: opacity 0.8s ease, transform 0.8s ease;
+    }
+
+    .reveal.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .reveal-delay-1 { transition-delay: 0.1s; }
+    .reveal-delay-2 { transition-delay: 0.2s; }
+    .reveal-delay-3 { transition-delay: 0.3s; }
+    .reveal-delay-4 { transition-delay: 0.4s; }
+
+    /* ─── Hero entrance ─── */
+    .hero-left > * {
+      opacity: 0;
+      transform: translateY(20px);
+      animation: fadeUp 0.7s ease forwards;
+    }
+
+    .hero-left > *:nth-child(1) { animation-delay: 0.2s; }
+    .hero-left > *:nth-child(2) { animation-delay: 0.35s; }
+    .hero-left > *:nth-child(3) { animation-delay: 0.5s; }
+    .hero-left > *:nth-child(4) { animation-delay: 0.65s; }
+
+    .review-card {
+      opacity: 0;
+      animation: fadeUp 0.8s ease 0.5s forwards;
+    }
+
+    @keyframes fadeUp {
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    /* ─── Review card typing effect ─── */
+    .rc-line.typed {
+      opacity: 0;
+      animation: typeFade 0.4s ease forwards;
+    }
+
+    @keyframes typeFade {
+      to { opacity: 1; }
+    }
+
+    /* ─── Responsive ─── */
+    @media (max-width: 1024px) {
+      .hero {
+        grid-template-columns: 1fr;
+        padding: 8rem 3rem 4rem;
+        min-height: auto;
+        gap: 4rem;
+      }
+
+      .hero h1 { font-size: 3rem; }
+
+      .hero-right {
+        justify-content: flex-start;
+      }
+
+      .review-card {
+        transform: none;
+        max-width: 100%;
+      }
+
+      section {
+        padding: 5rem 3rem;
+      }
+
+      .divider {
+        margin: 0 3rem;
+      }
+
+      .modes-grid,
+      .phases {
+        grid-template-columns: 1fr;
+      }
+
+      .dim-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .scoring-section {
+        grid-template-columns: 1fr;
+        gap: 3rem;
+      }
+
+      section h2 {
+        font-size: 2.2rem;
+      }
+
+      .topbar {
+        padding: 1rem 1.5rem;
+      }
+
+      .topbar-links a:not(.btn-install) {
+        display: none;
+      }
+
+      footer {
+        padding: 2rem 3rem;
+        flex-direction: column;
+        gap: 1rem;
+        text-align: center;
+      }
+
+      .cta-section {
+        padding: 6rem 3rem;
+      }
+
+      .cta-section h2 {
+        font-size: 2.5rem;
+      }
+    }
+
+    @media (max-width: 640px) {
+      .hero {
+        padding: 7rem 1.5rem 3rem;
+      }
+
+      .hero h1 {
+        font-size: 2.3rem;
+      }
+
+      section {
+        padding: 4rem 1.5rem;
+      }
+
+      .divider {
+        margin: 0 1.5rem;
+      }
+
+      .severity-cards {
+        grid-template-columns: 1fr;
+      }
+
+      .hero-actions {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+
+      footer {
+        padding: 2rem 1.5rem;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top bar -->
+  <nav class="topbar">
+    <div class="topbar-logo"><span>/</span>ux-review</div>
+    <div class="topbar-links">
+      <a href="#how-it-works">How it works</a>
+      <a href="#dimensions">Dimensions</a>
+      <a href="#scoring">Scoring</a>
+      <a href="https://github.com/D4rsh4k/ux-review" target="_blank">GitHub</a>
+      <a href="#install" class="btn-install">Install</a>
+    </div>
+  </nav>
+
+  <!-- Hero -->
+  <section class="hero">
+    <div class="hero-left">
+      <div class="hero-tag">Claude Code Plugin</div>
+      <h1>The UX review your code <em>actually</em> needs</h1>
+      <p class="hero-sub">Reads your codebase, launches the browser, executes every workflow end-to-end. Catches what linters can't see and humans forget to check.</p>
+      <div class="hero-actions">
+        <a href="#install" class="btn-install">Install Plugin</a>
+        <a href="https://github.com/D4rsh4k/ux-review" class="hero-cmd" target="_blank" style="text-decoration:none;">
+          <span class="prompt">&#9733;</span> Star on GitHub
+        </a>
+      </div>
+    </div>
+    <div class="hero-right">
+      <div class="review-card">
+        <div class="rc-header">
+          <div class="rc-dot"></div>
+          <div class="rc-dot"></div>
+          <div class="rc-dot"></div>
+        </div>
+        <div class="rc-line typed" style="animation-delay:0.8s"><span class="rc-verdict">## Verdict: Request changes</span></div>
+        <div class="rc-line typed" style="animation-delay:1.0s"><span class="rc-score">## Score: Auto-fail &mdash; 1 Critical finding</span></div>
+        <div class="rc-spacer"></div>
+        <div class="rc-finding typed" style="animation-delay:1.3s">
+          <span class="rc-sev-critical">Critical</span>
+          <span class="rc-dim">UI Consistency</span>
+          <span class="rc-desc">Native &lt;input checkbox&gt; bypasses design system</span>
+          <span class="rc-type">&#128269;</span>
+        </div>
+        <div class="rc-finding typed" style="animation-delay:1.5s">
+          <span class="rc-sev-major">Major</span>
+          <span class="rc-dim">Error Handling</span>
+          <span class="rc-desc">Silent catch on form submit &mdash; no feedback</span>
+          <span class="rc-type">&#128269;</span>
+        </div>
+        <div class="rc-finding typed" style="animation-delay:1.7s">
+          <span class="rc-sev-major">Major</span>
+          <span class="rc-dim">Journey</span>
+          <span class="rc-desc">Empty state renders blank div</span>
+          <span class="rc-type">&#128269;</span>
+        </div>
+        <div class="rc-finding typed" style="animation-delay:1.9s">
+          <span class="rc-sev-major">Major</span>
+          <span class="rc-dim">Responsive</span>
+          <span class="rc-desc">Modal overflows at 768px tablet width</span>
+          <span class="rc-type">&#128065;&#65039;</span>
+        </div>
+        <div class="rc-finding typed" style="animation-delay:2.1s">
+          <span class="rc-sev-minor">Minor</span>
+          <span class="rc-dim">Content</span>
+          <span class="rc-desc">Generic "Submit" button label</span>
+          <span class="rc-type">&#128269;</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="divider"></div>
+
+  <!-- Three verification modes -->
+  <section id="how-it-works">
+    <div class="reveal">
+      <div class="section-label">Three verification modes</div>
+      <h2>Code alone isn't <em>enough</em></h2>
+      <p class="section-desc">Code analysis misses visual issues. Visual inspection misses implementation flaws. Neither catches usability problems. All three modes are required.</p>
+    </div>
+    <div class="modes-grid reveal reveal-delay-1">
+      <div class="mode">
+        <div class="mode-num">i</div>
+        <h3>Code Analysis</h3>
+        <p>Reads source files to check structure, design system compliance, patterns, error handling, and state coverage. Every finding includes a file:line reference.</p>
+      </div>
+      <div class="mode">
+        <div class="mode-num">ii</div>
+        <h3>Visual Inspection</h3>
+        <p>Captures screenshots at 1440px, 1024px, and 768px. Verifies rendered output, visual hierarchy, spacing, and consistency against reference features.</p>
+      </div>
+      <div class="mode">
+        <div class="mode-num">iii</div>
+        <h3>Interactive Walkthrough</h3>
+        <p>Executes every workflow end-to-end in the browser. Counts clicks, triggers errors, tests boundary cases, and follows cross-feature transitions.</p>
+      </div>
+    </div>
+  </section>
+
+  <div class="divider"></div>
+
+  <!-- Phases -->
+  <section>
+    <div class="reveal">
+      <div class="section-label">Workflow</div>
+      <h2>Six phases, <em>zero</em> guesswork</h2>
+      <p class="section-desc">Each review follows a structured process from discovery to PR comment. Scope is confirmed before any review time is invested.</p>
+    </div>
+    <div class="phases">
+      <div class="phase reveal reveal-delay-1">
+        <div class="phase-num">0</div>
+        <h3>Discovery</h3>
+        <p>Maps the feature tree from the branch diff. Identifies components, user flows, step sequences, and the closest existing feature for comparison.</p>
+      </div>
+      <div class="phase reveal reveal-delay-2">
+        <div class="phase-num">1</div>
+        <h3>Clarification</h3>
+        <p>Confirms scope with you. Asks about focus areas, constraints, and data availability before investing review time.</p>
+      </div>
+      <div class="phase reveal reveal-delay-3">
+        <div class="phase-num">2</div>
+        <h3>Analysis</h3>
+        <p>Reads the codebase, sets up test data, then executes every workflow live. Tests happy paths, error paths, and boundary cases.</p>
+      </div>
+      <div class="phase reveal reveal-delay-1">
+        <div class="phase-num">3</div>
+        <h3>Review</h3>
+        <p>Evaluates across 10 dimensions. Every finding is classified by verification type and severity with file:line or screenshot evidence.</p>
+      </div>
+      <div class="phase reveal reveal-delay-2">
+        <div class="phase-num">4</div>
+        <h3>Report</h3>
+        <p>Verdict and score first, then action items, score card, walkthrough summary, state coverage matrix, and detailed findings.</p>
+      </div>
+      <div class="phase reveal reveal-delay-3">
+        <div class="phase-num">5</div>
+        <h3>Post to PR</h3>
+        <p>Automatically posts the review as a GitHub PR comment with the verdict visible up front and the full report in a collapsible section.</p>
+      </div>
+    </div>
+  </section>
+
+  <div class="divider"></div>
+
+  <!-- 10 Dimensions -->
+  <section id="dimensions">
+    <div class="reveal">
+      <div class="section-label">Review criteria</div>
+      <h2>Ten dimensions, <em>every</em> angle</h2>
+      <p class="section-desc">Each dimension has specific verification methods, a maximum severity cap, and strict rules for classification. No guessing.</p>
+    </div>
+    <div class="dim-grid reveal reveal-delay-1">
+      <div class="dim">
+        <div class="dim-index">1</div>
+        <div class="dim-content">
+          <h4>UI Consistency <span class="dim-sev sev-c">Critical</span></h4>
+          <p>Design system compliance. Catches native HTML replacing components, hardcoded colors, duplicated custom components.</p>
+        </div>
+      </div>
+      <div class="dim">
+        <div class="dim-index">2</div>
+        <div class="dim-content">
+          <h4>Design Smells <span class="dim-sev sev-c">Critical</span></h4>
+          <p>Anti-pattern scan: multiple primary buttons, blank panels, silent errors, missing loading states, spacing drift.</p>
+        </div>
+      </div>
+      <div class="dim">
+        <div class="dim-index">3</div>
+        <div class="dim-content">
+          <h4>Error Handling <span class="dim-sev sev-c">Critical</span></h4>
+          <p>Silent failures, unguarded destructive actions, missing validation. Tested both in code and live in the browser.</p>
+        </div>
+      </div>
+      <div class="dim">
+        <div class="dim-index">4</div>
+        <div class="dim-content">
+          <h4>Journey Completeness <span class="dim-sev sev-c">Critical</span></h4>
+          <p>State coverage: loading, empty, error, success, partial data, boundaries. Produces a state coverage matrix.</p>
+        </div>
+      </div>
+      <div class="dim">
+        <div class="dim-index">5</div>
+        <div class="dim-content">
+          <h4>Heuristic Evaluation <span class="dim-sev sev-m">Major*</span></h4>
+          <p>Nielsen's 10 heuristics: visibility, match, control, consistency, error prevention, recognition, flexibility, aesthetics.</p>
+        </div>
+      </div>
+      <div class="dim">
+        <div class="dim-index">6</div>
+        <div class="dim-content">
+          <h4>Visual Hierarchy <span class="dim-sev sev-c">Critical</span></h4>
+          <p>Gestalt principles: proximity, similarity, reading order, figure-ground. Verified from screenshots, not guessed from code.</p>
+        </div>
+      </div>
+      <div class="dim">
+        <div class="dim-index">7</div>
+        <div class="dim-content">
+          <h4>Cross-Feature Consistency <span class="dim-sev sev-m">Major</span></h4>
+          <p>Compares against a reference feature for patterns, state handling, component choices, and navigation.</p>
+        </div>
+      </div>
+      <div class="dim">
+        <div class="dim-index">8</div>
+        <div class="dim-content">
+          <h4>Responsive <span class="dim-sev sev-m">Major</span></h4>
+          <p>Layout at 1440, 1024, 768px. Overflow, interactive elements at tablet, scroll strategies. Verified visually.</p>
+        </div>
+      </div>
+      <div class="dim">
+        <div class="dim-index">9</div>
+        <div class="dim-content">
+          <h4>Content & Microcopy <span class="dim-sev sev-m">Major</span></h4>
+          <p>Button labels, error messages, placeholders, terminology consistency, confirmation dialog clarity.</p>
+        </div>
+      </div>
+      <div class="dim">
+        <div class="dim-index">10</div>
+        <div class="dim-content">
+          <h4>Efficiency <span class="dim-sev sev-m">Major</span></h4>
+          <p>Click counts, redundant round-trips, cognitive load, smart defaults. Measured live during walkthrough.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="divider"></div>
+
+  <!-- Scoring -->
+  <section id="scoring">
+    <div class="reveal">
+      <div class="section-label">Scoring</div>
+      <h2>Objective, <em>strict</em>, no exceptions</h2>
+      <p class="section-desc">Start at 100. Any Critical finding is an auto-fail. Otherwise, deduct Major and Minor findings. Subjective observations don't affect the score.</p>
+    </div>
+    <div class="scoring-section">
+      <div class="score-scale reveal reveal-delay-1">
+        <div class="score-band sb-approve">
+          <div class="score-range">90-100</div>
+          <div class="score-bar"></div>
+          <div class="score-label">Approve</div>
+        </div>
+        <div class="score-band sb-changes">
+          <div class="score-range">80-89</div>
+          <div class="score-bar"></div>
+          <div class="score-label">Fix & Merge</div>
+        </div>
+        <div class="score-band sb-rework">
+          <div class="score-range">&lt; 80</div>
+          <div class="score-bar"></div>
+          <div class="score-label">Rework</div>
+        </div>
+      </div>
+      <div class="severity-cards reveal reveal-delay-2">
+        <div class="sev-card sc-critical">
+          <h4>Critical</h4>
+          <p>Structural DS violation, data loss, blocked workflow</p>
+          <div class="sev-card-impact">Auto-fail</div>
+        </div>
+        <div class="sev-card sc-major">
+          <h4>Major</h4>
+          <p>Functional gap, missing state, heuristic failure</p>
+          <div class="sev-card-impact">-5 points</div>
+        </div>
+        <div class="sev-card sc-minor">
+          <h4>Minor</h4>
+          <p>Cosmetic, subjective, low-impact</p>
+          <div class="sev-card-impact">-2 points</div>
+        </div>
+        <div class="sev-card sc-approve">
+          <h4>Info</h4>
+          <p>Observation or suggestion</p>
+          <div class="sev-card-impact">No deduction</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="divider"></div>
+
+  <!-- Prerequisites -->
+  <section>
+    <div class="reveal">
+      <div class="section-label">Requirements</div>
+      <h2>What you need</h2>
+    </div>
+    <div class="prereqs reveal reveal-delay-1">
+      <div class="prereq"><div class="prereq-dot"></div> Claude Code</div>
+      <div class="prereq"><div class="prereq-dot"></div> Claude in Chrome extension</div>
+      <div class="prereq"><div class="prereq-dot"></div> gh CLI</div>
+      <div class="prereq"><div class="prereq-dot"></div> Dev server on localhost</div>
+      <div class="prereq"><div class="prereq-dot"></div> Feature branch with UI changes</div>
+    </div>
+  </section>
+
+  <div class="divider"></div>
+
+  <!-- Installation -->
+  <section id="install">
+    <div class="reveal">
+      <div class="section-label">Get started</div>
+      <h2>Install in <em>seconds</em></h2>
+      <p class="section-desc">Add the plugin from GitHub, then run it on any feature branch with UI changes.</p>
+    </div>
+    <div class="install-steps reveal reveal-delay-1">
+      <div class="install-step">
+        <div class="step-num">1</div>
+        <div class="step-content">
+          <h4>Add the plugin source</h4>
+          <p>Register the GitHub repository as a plugin marketplace in Claude Code:</p>
+          <div class="code-block" onclick="navigator.clipboard.writeText('/plugin marketplace add D4rsh4k/ux-review'); this.querySelector('.copy-toast').style.opacity=1; setTimeout(()=>this.querySelector('.copy-toast').style.opacity=0, 1500)">
+            <span class="cb-prompt">&gt;</span> /plugin marketplace add D4rsh4k/ux-review
+            <span class="copy-toast">Copied!</span>
+          </div>
+        </div>
+      </div>
+      <div class="install-step">
+        <div class="step-num">2</div>
+        <div class="step-content">
+          <h4>Install the plugin</h4>
+          <p>Install it into your Claude Code environment:</p>
+          <div class="code-block" onclick="navigator.clipboard.writeText('/plugin install ux-review'); this.querySelector('.copy-toast').style.opacity=1; setTimeout(()=>this.querySelector('.copy-toast').style.opacity=0, 1500)">
+            <span class="cb-prompt">&gt;</span> /plugin install ux-review
+            <span class="copy-toast">Copied!</span>
+          </div>
+        </div>
+      </div>
+      <div class="install-step">
+        <div class="step-num">3</div>
+        <div class="step-content">
+          <h4>Run a review</h4>
+          <p>On any feature branch with UI changes, invoke the skill:</p>
+          <div class="code-block" onclick="navigator.clipboard.writeText('/ux-review'); this.querySelector('.copy-toast').style.opacity=1; setTimeout(()=>this.querySelector('.copy-toast').style.opacity=0, 1500)">
+            <span class="cb-prompt">&gt;</span> /ux-review
+            <span class="copy-toast">Copied!</span>
+          </div>
+        </div>
+      </div>
+      <div class="install-alt">
+        <h4>Alternative: local install</h4>
+        <p>Clone the repo and point Claude Code to it directly:</p>
+        <div class="code-block" onclick="navigator.clipboard.writeText('git clone https://github.com/D4rsh4k/ux-review.git && claude --plugin-dir ./ux-review'); this.querySelector('.copy-toast').style.opacity=1; setTimeout(()=>this.querySelector('.copy-toast').style.opacity=0, 1500)">
+          <span class="cb-prompt">&gt;</span> git clone https://github.com/D4rsh4k/ux-review.git<br>
+          <span class="cb-prompt">&gt;</span> claude --plugin-dir ./ux-review
+          <span class="copy-toast">Copied!</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="divider"></div>
+
+  <!-- CTA -->
+  <section class="cta-section">
+    <h2 class="reveal">Stop shipping <em>blind</em></h2>
+    <p class="reveal reveal-delay-1">Every finding backed by evidence. Every verdict backed by rules. Every review posted to your PR automatically.</p>
+    <div style="display:flex; gap:1rem; justify-content:center; flex-wrap:wrap;" class="reveal reveal-delay-2">
+      <a href="#install" class="btn-install" style="padding:0.75rem 1.75rem; font-size:0.9rem; border-radius:8px;">Install Plugin</a>
+      <a href="https://github.com/D4rsh4k/ux-review" target="_blank" class="cta-install" style="text-decoration:none;">
+        <span class="prompt">&#9733;</span> Star on GitHub
+      </a>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer>
+    <p>Built by Darshak Nanda</p>
+    <a href="https://github.com/D4rsh4k/ux-review" target="_blank">GitHub &nearr;</a>
+  </footer>
+
+  <script>
+    // Scroll reveal
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('visible');
+        }
+      });
+    }, { threshold: 0.1, rootMargin: '0px 0px -40px 0px' });
+
+    document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+  </script>
+
+</body>
+</html>
